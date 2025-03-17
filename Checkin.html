@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check-in</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="leaderboard.html">Leaderboard</a>
+        <a href="checkin.html">Check-in</a>
+        <a href="achievements.html">Achievements</a>
+        <a href="admin.html">Admin Dashboard</a>
+    </nav>
+    
+    <div class="container">
+        <h1>Check-in with QR Code</h1>
+        <p>Scan this QR code to check in for the event.</p>
+        <img id="qrCode" src="" alt="QR Code will appear here" style="max-width: 200px;">
+        <button class="button" onclick="generateQRCode()">Get QR Code</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
