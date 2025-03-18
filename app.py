@@ -1,22 +1,27 @@
 from flask import Flask, request, send_file
-from flask_cors import CORS  # Разрешает запросы с других доменов (CORS)
+from flask_cors import CORS  
 import qrcode
 import io
+import os  
 
 app = Flask(__name__)
-CORS(app)  # Разрешаем CORS для всех источников
+CORS(app)
 
+# Home Route (Fix for Render)
+@app.route('/')
+def home():
+    return "Welcome to the TrakZone QR Code API! Use /generate_qr?data=your_text", 200
+
+# QR Code Generator Route
 @app.route('/generate_qr', methods=['GET'])
 def generate_qr():
     data = request.args.get('data', 'Default QR Code Data')
-
-    # Генерация QR-кода
     qr = qrcode.make(data)
     img_io = io.BytesIO()
     qr.save(img_io, 'PNG')
     img_io.seek(0)
-
     return send_file(img_io, mimetype='image/png')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  
+    app.run(host='0.0.0.0', port=port)  # 0.0.0.0 is required for Render
