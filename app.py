@@ -13,6 +13,7 @@ CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:admin@localhost/trakzone"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Initialize Database and Migrations
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)  # ✅ Initialize Flask-Migrate
 
@@ -20,6 +21,13 @@ migrate = Migrate(app, db)  # ✅ Initialize Flask-Migrate
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)  # ✅ Added email column
+
+# Define an Event model
+class Event(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    date = db.Column(db.DateTime, nullable=False)
 
 # Home Route (Fix for Render)
 @app.route('/')
