@@ -9,7 +9,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Database Configuration (Replace with your credentials)
-app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:admin@5432/trakzone"
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:admin@localhost/trakzone"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
