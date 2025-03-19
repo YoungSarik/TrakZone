@@ -1,6 +1,7 @@
 from flask import Flask, request, send_file
 from flask_cors import CORS  
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate  # ✅ Import Flask-Migrate
 import qrcode
 import io
 import os  
@@ -13,6 +14,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:admin@localhost/t
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)  # ✅ Initialize Flask-Migrate
 
 # Define a User model
 class User(db.Model):
