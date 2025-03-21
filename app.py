@@ -26,7 +26,10 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 jwt = JWTManager(app)
 
-# User Model
+# ================================
+# MODELS
+# ================================
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
@@ -39,13 +42,11 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-# Event Model
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     date = db.Column(db.DateTime, nullable=False)
 
-# Check-in Model
 class CheckIn(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -55,7 +56,10 @@ class CheckIn(db.Model):
     user = db.relationship('User', backref=db.backref('checkins', lazy=True))
     event = db.relationship('Event', backref=db.backref('checkins', lazy=True))
 
-# 🚀 User Registration
+# ================================
+# AUTHENTICATION ROUTES
+# ================================
+
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
@@ -65,6 +69,9 @@ def register():
     if User.query.filter_by(username=data['username']).first():
         return jsonify({"error": "Username already exists"}), 400
 
+    if User.query.filter_by(email=data['email']).first():
+        return jsonify({"error": "Email already registered"}), 400
+
     new_user = User(username=data['username'], email=data['email'])
     new_user.set_password(data['password'])
     db.session.add(new_user)
@@ -72,26 +79,29 @@ def register():
     
     return jsonify({"message": "User registered successfully"}), 201
 
-# 🔑 User Login
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
+    if not data or "username" not in data or "password" not in data:
+        return jsonify({"error": "Missing username or password"}), 400
+    
     user = User.query.filter_by(username=data['username']).first()
-
-    if user and user.check_password(data['password']):
-        access_token = create_access_token(identity=user.id)
-        return jsonify(access_token=access_token), 200
-    else:
+    if not user or not user.check_password(data['password']):
         return jsonify({"error": "Invalid credentials"}), 401
 
-# 🔒 Protected Example Route
+    access_token = create_access_token(identity=user.id)
+    return jsonify(access_token=access_token), 200
+
 @app.route('/protected', methods=['GET'])
 @jwt_required()
 def protected():
     current_user = get_jwt_identity()
     return jsonify(message=f"Hello User {current_user}, you have access!"), 200
 
-# 📆 Create an Event
+# ================================
+# EVENT ROUTES
+# ================================
+
 @app.route('/events', methods=['POST'])
 @jwt_required()
 def create_event():
@@ -110,14 +120,12 @@ def create_event():
     
     return jsonify({"message": "Event created successfully!", "event_id": new_event.id}), 201
 
-# 📜 List All Events
 @app.route('/events', methods=['GET'])
 def get_events():
     events = Event.query.all()
     events_list = [{"id": e.id, "name": e.name, "date": e.date.strftime("%Y-%m-%d %H:%M:%S")} for e in events]
     return jsonify(events_list), 200
 
-# 📄 Get Event Details
 @app.route('/events/<int:event_id>', methods=['GET'])
 def get_event(event_id):
     event = Event.query.get(event_id)
@@ -126,7 +134,10 @@ def get_event(event_id):
 
     return jsonify({"id": event.id, "name": event.name, "date": event.date.strftime("%Y-%m-%d %H:%M:%S")}), 200
 
-# 📍 Generate Event QR Code
+# ================================
+# QR CODE GENERATION & CHECK-IN
+# ================================
+
 @app.route('/generate_qr/<int:event_id>', methods=['GET'])
 def generate_event_qr(event_id):
     event = Event.query.get(event_id)
@@ -141,7 +152,6 @@ def generate_event_qr(event_id):
     
     return send_file(img_io, mimetype='image/png')
 
-# ✅ Check-in Endpoint
 @app.route('/checkin', methods=['POST'])
 @jwt_required()
 def checkin():
@@ -162,7 +172,6 @@ def checkin():
 
     return jsonify({"message": "Check-in successful!"}), 201
 
-# 🎟️ Get Event Attendees
 @app.route('/event_attendees/<int:event_id>', methods=['GET'])
 def event_attendees(event_id):
     checkins = CheckIn.query.filter_by(event_id=event_id).all()
@@ -170,7 +179,10 @@ def event_attendees(event_id):
     
     return jsonify({"event_id": event_id, "attendees": attendees})
 
-# Run the app
+# ================================
+# RUN APP
+# ================================
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))  
     app.run(host='0.0.0.0', port=port)
