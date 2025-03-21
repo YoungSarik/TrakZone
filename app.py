@@ -14,7 +14,7 @@ CORS(app)
 # Database Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:admin@localhost/trakzone"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = "supersecretkey"  # Change this to a strong secret key!
+app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", "supersecretkey")  # Secure environment variable
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -37,7 +37,7 @@ class User(db.Model):
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
-    if not data.get('username') or not data.get('email') or not data.get('password'):
+    if not all(k in data for k in ("username", "email", "password")):
         return jsonify({"error": "Missing required fields"}), 400
     
     if User.query.filter_by(username=data['username']).first():
@@ -57,7 +57,7 @@ def login():
     user = User.query.filter_by(username=data['username']).first()
 
     if user and user.check_password(data['password']):
-        access_token = create_access_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))  # Convert ID to string
         return jsonify(access_token=access_token), 200
     else:
         return jsonify({"error": "Invalid credentials"}), 401
