@@ -14,7 +14,8 @@ CORS(app)
 # Database Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:admin@localhost/trakzone"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", "supersecretkey")  # Secure environment variable
+app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", "supersecretkey")
+API_URL = os.getenv("API_URL", "http://127.0.0.1:5000")  # Change for deployment
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -73,7 +74,7 @@ def login():
     user = User.query.filter_by(username=data['username']).first()
 
     if user and user.check_password(data['password']):
-        access_token = create_access_token(identity=str(user.id))  # Convert ID to string
+        access_token = create_access_token(identity=user.id)  # Keep ID as integer
         return jsonify(access_token=access_token), 200
     else:
         return jsonify({"error": "Invalid credentials"}), 401
@@ -92,7 +93,7 @@ def generate_event_qr(event_id):
     if not event:
         return jsonify({"error": "Event not found"}), 404
 
-    qr_data = f"http://127.0.0.1:5000/checkin?event_id={event_id}"
+    qr_data = f"{API_URL}/checkin?event_id={event_id}"
     qr = qrcode.make(qr_data)
     img_io = io.BytesIO()
     qr.save(img_io, 'PNG')
@@ -104,7 +105,7 @@ def generate_event_qr(event_id):
 @app.route('/checkin', methods=['POST'])
 @jwt_required()
 def checkin():
-    current_user = get_jwt_identity()
+    current_user = int(get_jwt_identity())  # Ensure it's an integer
     event_id = request.json.get('event_id')
 
     event = Event.query.get(event_id)
