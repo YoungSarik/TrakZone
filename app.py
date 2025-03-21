@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS  
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate  
@@ -32,6 +32,22 @@ class User(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+# Event Model
+class Event(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    date = db.Column(db.DateTime, nullable=False)
+
+# Check-in Model
+class CheckIn(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, server_default=db.func.now())
+
+    user = db.relationship('User', backref=db.backref('checkins', lazy=True))
+    event = db.relationship('Event', backref=db.backref('checkins', lazy=True))
 
 # Register Endpoint
 @app.route('/register', methods=['POST'])
@@ -68,6 +84,43 @@ def login():
 def protected():
     current_user = get_jwt_identity()
     return jsonify(message=f"Hello User {current_user}, you have access!"), 200
+
+# Generate Event QR Code
+@app.route('/generate_qr/<int:event_id>', methods=['GET'])
+def generate_event_qr(event_id):
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({"error": "Event not found"}), 404
+
+    qr_data = f"http://127.0.0.1:5000/checkin?event_id={event_id}"
+    qr = qrcode.make(qr_data)
+    img_io = io.BytesIO()
+    qr.save(img_io, 'PNG')
+    img_io.seek(0)
+    
+    return send_file(img_io, mimetype='image/png')
+
+# Check-in Endpoint
+@app.route('/checkin', methods=['POST'])
+@jwt_required()
+def checkin():
+    current_user = get_jwt_identity()
+    event_id = request.json.get('event_id')
+
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({"error": "Event not found"}), 404
+
+    # Prevent duplicate check-ins
+    existing_checkin = CheckIn.query.filter_by(user_id=current_user, event_id=event_id).first()
+    if existing_checkin:
+        return jsonify({"message": "You are already checked in!"}), 200
+
+    new_checkin = CheckIn(user_id=current_user, event_id=event_id)
+    db.session.add(new_checkin)
+    db.session.commit()
+
+    return jsonify({"message": "Check-in successful!"}), 201
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))  
