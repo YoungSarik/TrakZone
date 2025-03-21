@@ -20,7 +20,7 @@ CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", "postgresql://postgres:admin@localhost/trakzone")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", "supersecretkey")  
-API_URL = os.getenv("API_URL", "http://127.0.0.1:5500")  
+API_URL = os.getenv("API_URL", "http://127.0.0.1:5000")  
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)

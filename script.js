@@ -1,4 +1,4 @@
-const API_URL = "http://127.0.0.1:5500"; // Change to your deployed API URL if needed
+const API_URL = "http://127.0.0.1:5000"; // Change to your deployed API URL if needed
 
 function generateQRCode() {
     const eventId = 1; // Replace this with dynamic event selection if needed
